@@ -1,0 +1,70 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{vietnam}
+\usepackage[margin=1in]{geometry}
+\usepackage{titlesec}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\title{\textbf{BÁO CÁO BUỔI 2: KIẾN TRÚC REST VÀ HTTP FUNDAMENTALS}}
+\author{Kiến trúc hướng dịch vụ (SOA)}
+\date{2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Tổng quan về REST}
+Hệ thống World Wide Web giống như một thành phố, trong đó \textbf{HTTP} là hệ thống đường xá, còn \textbf{REST} là bộ luật giao thông giúp mọi thứ vận hành trơn tru.
+
+\section{6 Nguyên tắc vàng của kiến trúc REST}
+Để một hệ thống được công nhận là RESTful, nó phải tuân thủ các ràng buộc sau:
+
+\begin{itemize}
+    \item \textbf{Client-Server:} Tách biệt giữa giao diện và dữ liệu, cho phép phát triển độc lập.
+    \item \textbf{Stateless (Phi trạng thái):} Mỗi request phải chứa đầy đủ thông tin để Server hiểu được mà không cần lưu lại ngữ cảnh từ các request trước.
+    \item \textbf{Cacheable (Có thể lưu bộ nhớ đệm):} Phản hồi phải tự định nghĩa khả năng lưu cache để tăng hiệu năng.
+    \item \textbf{Uniform Interface (Giao diện thống nhất):} Mọi tài nguyên được định danh qua URI và tương tác qua các phương thức chuẩn.
+    \item \textbf{Layered System (Hệ thống phân lớp):} Client không cần biết mình đang kết nối trực tiếp với Server hay qua các lớp trung gian (Proxy, Load Balancer).
+    \item \textbf{Code on Demand (Tùy chọn):} Server có thể gửi mã thực thi (như JavaScript) về phía Client.
+\end{itemize}
+
+\section{HTTP Fundamentals}
+
+\subsection{Các phương thức HTTP (Methods)}
+\begin{center}
+\begin{tabular}{|m{2cm}|m{5cm}|m{6cm}|}
+    \hline
+    \textbf{Method} & \textbf{Mục đích} & \textbf{Tính chất (Idempotent)} \\
+    \hline
+    GET & Lấy dữ liệu & Có (Gọi nhiều lần kết quả không đổi) \\
+    \hline
+    POST & Tạo mới tài nguyên & Không (Tạo bản ghi mới mỗi lần gọi) \\
+    \hline
+    PUT & Ghi đè toàn bộ & Có (Thay thế hoàn toàn tài nguyên) \\
+    \hline
+    PATCH & Cập nhật một phần & Thường không (Chỉ sửa trường cụ thể) \\
+    \hline
+    DELETE & Xóa tài nguyên & Có (Xóa rồi thì vẫn là đã xóa) \\
+    \hline
+\end{tabular}
+\end{center}
+
+\subsection{Mã trạng thái (Status Codes)}
+\begin{itemize}
+    \item \textbf{\color{blue}2xx (Success):} Thành công (Ví dụ: 200 OK, 201 Created).
+    \item \textbf{\color{orange}3xx (Redirection):} Chuyển hướng (Ví dụ: 301 Moved Permanently).
+    \item \textbf{\color{red}4xx (Client Error):} Lỗi phía người dùng (Ví dụ: 400 Bad Request, 404 Not Found).
+    \item \textbf{\color{purple}5xx (Server Error):} Lỗi phía hệ thống (Ví dụ: 500 Internal Server Error).
+\end{itemize}
+
+\section{Mô hình trưởng thành Richardson (Maturity Model)}
+Đánh giá mức độ RESTful của một API qua 4 cấp độ:
+\begin{description}
+    \item[Level 0:] Dùng HTTP như đường dẫn truyền tin (thường chỉ dùng POST).
+    \item[Level 1:] Sử dụng Tài nguyên (Resources) với các URL riêng biệt.
+    \item[Level 2:] Sử dụng đúng các Động từ HTTP và Mã trạng thái.
+    \item[Level 3:] \textbf{HATEOAS} (Hypermedia as the Engine of Application State).
+\end{description}
+
+\end{document}
