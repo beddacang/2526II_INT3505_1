@@ -1,0 +1,99 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+\begin{document}
+
+\begin{center}
+    \Large \textbf{Chuẩn bị trước tuần 3: Nguyên tắc thiết kế API}
+\end{center}
+
+\vspace{0.5cm}
+
+\section{Giới thiệu chung}
+Trong kiến trúc hướng dịch vụ (SOA), API (Application Programming Interface) đóng vai trò là giao diện giao tiếp chính giữa các thành phần. Việc tuân thủ các nguyên tắc thiết kế giúp đảm bảo tính bền vững và khả năng tích hợp hệ thống.
+
+\section{Các Nguyên Tắc Thiết Kế API Cốt Lõi (Best Practices)}
+Một thiết kế API chuẩn mực cần dựa trên 3 trụ cột:
+
+\subsection{Nhất quán (Consistency)}
+Giúp giảm thời gian tìm hiểu tài liệu thông qua việc chuẩn hóa:
+\begin{itemize}
+    \item \textbf{Cấu trúc dữ liệu:} Đồng nhất định dạng (ví dụ: JSON).
+    \item \textbf{Mã lỗi:} Sử dụng thống nhất hệ thống HTTP Status Code (ví dụ: 404 cho tài nguyên không tồn tại).
+    \item \textbf{Định dạng thời gian:} Tuân thủ chuẩn ISO 8601 (ví dụ: \texttt{2026-03-12T10:00:00Z}).
+\end{itemize}
+
+\subsection{Dễ hiểu (Clarity)}
+Tên gọi phải mang tính biểu đạt cao và phản ánh đúng nghiệp vụ:
+\begin{itemize}
+    \item Sử dụng \texttt{status} thay vì các từ viết tắt khó hiểu như \texttt{st}.
+    \item Đặt tên trường rõ ràng như \texttt{created\_at}, \texttt{is\_active}.
+\end{itemize}
+
+\subsection{Dễ mở rộng (Extensibility)}
+Đảm bảo hệ thống có thể tiến hóa mà không gây ra \textit{breaking changes}:
+\begin{itemize}
+    \item Sử dụng các tham số tùy chọn (\textit{optional parameters}).
+    \item Chỉ thêm các trường mới, hạn chế thay đổi cấu trúc dữ liệu cũ.
+\end{itemize}
+
+\section{Quy Tắc Đặt Tên (Naming Conventions)}
+\begin{enumerate}
+    \item \textbf{Sử dụng danh từ số nhiều (Plural Nouns):}
+    \begin{itemize}
+        \item \textcolor{green}{Nên:} \texttt{/users}, \texttt{/orders}, \texttt{/products}
+        \item \textcolor{red}{Không nên:} \texttt{/getUser}, \texttt{/user}, \texttt{/create\_order}
+    \end{itemize}
+    
+    \item \textbf{Chữ thường và gạch nối (Lowercase \& Hyphens):} 
+    \begin{itemize}
+        \item Tránh nhầm lẫn do server phân biệt chữ hoa/thường.
+        \item Dùng \texttt{-} thay cho \texttt{\_} để tăng khả năng đọc.
+    \end{itemize}
+
+    \item \textbf{Quản lý phiên bản (Versioning):} 
+    \begin{itemize}
+        \item \textit{Ví dụ:} \texttt{https://api.example.com/v1/resource}
+    \end{itemize}
+\end{enumerate}
+
+\section{Thiết Kế Endpoint và Phương Thức HTTP}
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\textbf{Hành động} & \textbf{HTTP Method} & \textbf{Ví dụ Endpoint} \\ \hline
+Lấy danh sách & GET & \texttt{/orders} \\ \hline
+Lấy chi tiết & GET & \texttt{/orders/\{id\}} \\ \hline
+Tạo mới & POST & \texttt{/orders} \\ \hline
+Cập nhật toàn bộ & PUT & \texttt{/orders/\{id\}} \\ \hline
+Xóa & DELETE & \texttt{/orders/\{id\}} \\ \hline
+\end{tabularx}
+\caption{Ánh xạ hành động và phương thức HTTP}
+\end{table}
+
+\section{Đánh Giá Chất Lượng Thiết Kế API}
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|l|X|X|}
+\hline
+\textbf{Tiêu chí} & \textbf{Dấu hiệu Tốt (Good)} & \textbf{Dấu hiệu Tệ (Bad)} \\ \hline
+\textbf{HTTP Methods} & Dùng đúng ngữ nghĩa của phương thức. & Dùng GET để thực hiện xóa/sửa. \\ \hline
+\textbf{Mã trạng thái} & 201 (Created), 400 (Bad Request). & Luôn trả về 200 kèm báo lỗi. \\ \hline
+\textbf{Lọc/Sắp xếp} & Dùng Query Params: \texttt{?sort=asc}. & Tạo endpoint cứng cho mỗi bộ lọc. \\ \hline
+\textbf{Bảo mật} & Trả về dữ liệu tối giản theo yêu cầu. & Lộ Schema database qua API. \\ \hline
+\end{tabularx}
+\end{table}
+
+\end{document}
