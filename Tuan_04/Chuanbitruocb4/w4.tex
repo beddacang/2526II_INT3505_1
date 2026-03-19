@@ -1,0 +1,55 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\geometry{a4paper, margin=1in}
+
+\title{\textbf{Đặc tả API và OpenAPI Specification}}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Giới thiệu về OpenAPI và Swagger}
+OpenAPI Specification (OAS) là một tiêu chuẩn mô tả cho các RESTful API. Swagger là bộ công cụ phổ biến nhất hiện nay để triển khai tiêu chuẩn này. Trong kiến trúc hướng dịch vụ, OpenAPI đóng vai trò là \textbf{API Contract} (Hợp đồng API), giúp đồng bộ hóa quy trình phát triển giữa các nhóm làm việc khác nhau.
+
+\section{Vai trò của OpenAPI trong Tài liệu hóa API}
+\begin{itemize}
+    \item \textbf{Single Source of Truth:} Là nguồn tài liệu duy nhất và chính xác nhất về khả năng của dịch vụ.
+    \item \textbf{Interactive Documentation:} Cung cấp giao diện Swagger UI cho phép người dùng thử nghiệm API trực tiếp.
+    \item \textbf{Code Generation:} Tự động tạo ra mã nguồn cho cả phía Server và Client, giúp tiết kiệm thời gian phát triển.
+    \item \textbf{Validation:} Hỗ trợ kiểm tra tính hợp lệ của dữ liệu đầu vào và đầu ra dựa trên các quy tắc đã định nghĩa.
+\end{itemize}
+
+\section{Cấu trúc chi tiết của một tệp OpenAPI Spec}
+Một tệp cấu trúc OpenAPI điển hình (định dạng YAML hoặc JSON) bao gồm các thành phần sau:
+
+\subsection{Thông tin cơ bản (Info \& Servers)}
+Phần này mô tả tổng quan về API và môi trường chạy (Production, Staging).
+\begin{itemize}
+    \item \texttt{openapi}: Phiên bản của đặc tả (ví dụ: 3.0.0).
+    \item \texttt{info}: Tiêu đề, mô tả và phiên bản của API.
+    \item \texttt{servers}: Danh sách các địa chỉ URL của máy chủ API.
+\end{itemize}
+
+\subsection{Đường dẫn (Paths)}
+Định nghĩa các điểm cuối (Endpoints) và các phương thức HTTP tương ứng. Mỗi phương thức bao gồm:
+\begin{itemize}
+    \item \textbf{Parameters:} Các tham số truyền qua URL (\texttt{path}), chuỗi truy vấn (\texttt{query}), hoặc tiêu đề (\texttt{header}).
+    \item \textbf{Request Body:} Định nghĩa cấu trúc dữ liệu gửi lên (thường dùng cho POST, PUT).
+    \item \textbf{Responses:} Danh sách các mã trạng thái HTTP (200, 404, 500) và dữ liệu trả về tương ứng.
+\end{itemize}
+
+\subsection{Thành phần tái sử dụng (Components)}
+Đây là nơi chứa các \textbf{Schemas} (lược đồ dữ liệu). Thay vì khai báo cấu trúc một đối tượng ``User'' ở nhiều nơi, ta định nghĩa nó một lần trong \texttt{components} và tham chiếu bằng từ khóa \texttt{\$ref}.
+
+\section{Kết luận}
+Việc nắm vững lý thuyết về OpenAPI là bước đệm quan trọng trước khi triển khai code. Nó giúp lập trình viên tư duy về mặt thiết kế hệ thống (Design-first) thay vì chỉ tập trung vào việc viết code logic, từ đó tạo ra các dịch vụ có tính tương thích và mở rộng cao trong hệ thống SOA.
+
+\end{document}
