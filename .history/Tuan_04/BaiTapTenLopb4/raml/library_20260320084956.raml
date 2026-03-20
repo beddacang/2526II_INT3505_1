@@ -1,0 +1,11 @@
+#%RAML 1.0
+title: Library API
+version: v1
+/books:
+  get:
+    description: Get all books
+    responses:
+      200:
+        body:
+          application/json:
+            example: [{"id": 1, "title": "SOA Basic"}]
