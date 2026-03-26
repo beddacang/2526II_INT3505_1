@@ -1,0 +1,96 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\geometry{margin=2.5cm}
+
+\title{\textbf{Tuần 5: Mô hình hóa dữ liệu và Thiết kế Tài nguyên trong SOA}}
+\author{Lộ trình Phát triển Hệ thống}
+
+
+\begin{document}
+
+\maketitle
+
+\section{Thiết kế cây tài nguyên (Resource Modeling)}
+Trong kiến trúc hướng dịch vụ (SOA) và RESTful API, việc thiết kế tài nguyên phải tập trung vào \textbf{Danh từ} (thực thể) thay vì Động từ (hành động).
+
+\subsection{Quy tắc thiết kế hệ cấp}
+\begin{itemize}
+    \item \textbf{Sử dụng số nhiều:} Luôn dùng \texttt{/users} thay vì \texttt{/user}.
+    \item \textbf{Quan hệ phân cấp (Nested Resources):} Biểu diễn mối quan hệ "sở hữu" giữa các thực thể. 
+    \item \textbf{Giới hạn độ sâu:} Tránh lồng quá 3 cấp để giảm sự phức tạp của URL.
+\end{itemize}
+
+\subsection{Ví dụ mô hình hóa Domain: Thương mại điện tử}
+\begin{table}[h!]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Đường dẫn (Endpoint)} & \textbf{Ý nghĩa tài nguyên} \\
+\midrule
+\texttt{/products} & Danh sách toàn bộ sản phẩm \\
+\texttt{/products/\{id\}} & Chi tiết một sản phẩm cụ thể \\
+\texttt{/customers/\{id\}/orders} & Danh sách đơn hàng của một khách hàng \\
+\texttt{/orders/\{id\}/items} & Chi tiết các mặt hàng trong một đơn hàng \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+---
+
+\section{Chiến lược phân trang (Pagination Strategies)}
+Khi làm việc với Big Data trong SOA, việc tối ưu hóa cách trả về dữ liệu là bắt buộc để tránh làm treo hệ thống.
+
+\subsection{1. Offset-based Pagination}
+Sử dụng hai tham số chính là \texttt{limit} (số lượng) và \texttt{offset} (vị trí bắt đầu).
+\begin{itemize}
+    \item \textbf{Cú pháp SQL:} \texttt{SELECT * FROM table LIMIT 20 OFFSET 100;}
+    \item \textbf{Ưu điểm:} Dễ hiểu, hỗ trợ nhảy đến trang bất kỳ (Page Jumping).
+    \item \textbf{Nhược điểm:} Hiệu năng giảm mạnh khi offset lớn vì Database phải quét qua các bản ghi cũ. Dễ bị trùng lặp dữ liệu nếu có bản ghi mới chèn vào lúc đang chuyển trang.
+\end{itemize}
+
+\subsection{2. Cursor-based Pagination (Phân trang con trỏ)}
+Sử dụng một con trỏ (thường là ID hoặc Timestamp của bản ghi cuối cùng trang trước).
+\begin{itemize}
+    \item \textbf{Cú pháp SQL:} \texttt{SELECT * FROM table WHERE id > [cursor] LIMIT 20;}
+    \item \textbf{Ưu điểm:} Hiệu năng cực nhanh ($O(1)$ với Index). Không bao giờ bị trùng lặp dữ liệu.
+    \item \textbf{Nhược điểm:} Không thể nhảy đến một trang cụ thể ở giữa.
+\end{itemize}
+
+\section{So sánh các kiểu phân trang}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Tiêu chí} & \textbf{Offset-based} & \textbf{Cursor-based} & \textbf{Page-based} \\ \hline
+Tốc độ (Dữ liệu lớn) & Chậm & Rất nhanh & Chậm \\ \hline
+Nhảy trang tự do & Có & Không & Có \\ \hline
+Độ ổn định dữ liệu & Thấp & Cao & Thấp \\ \hline
+Phù hợp với & Dashboard, Admin & Infinite Scroll & Website tin tức \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Mô hình hóa dữ liệu (Data Modeling)}
+Trong thiết kế hệ thống, ta cần phân biệt giữa \textbf{Schema} (lưu trữ) và \textbf{API Model} (hiển thị). 
+
+\subsection{Domain: Blog System}
+\begin{itemize}
+    \item \textbf{User (Người dùng):} Lưu trữ thông tin định danh và xác thực.
+    \item \textbf{Post (Bài viết):} Liên kết với \texttt{author\_id}. 
+    \item \textbf{Comment (Bình luận):} Quan hệ $n-1$ với Post.
+    \item \textbf{Tag (Thẻ):} Quan hệ $n-n$ với Post thông qua bảng trung gian.
+\end{itemize}
+
+\begin{quote}
+\textit{Lưu ý trong SOA:} Các dịch vụ khác nhau có thể sở hữu các phần dữ liệu khác nhau (ví dụ: Dịch vụ User quản lý thông tin cá nhân, Dịch vụ Blog quản lý bài viết).
+\end{quote}
+
+\end{document}
