@@ -1,0 +1,12 @@
+### Demo Request: Lấy danh sách sách (Library API)
+GET https://67ef2275797394145963.mockapi.io/books
+Content-Type: application/json
+
+### Demo Request: Thêm một cuốn sách mới
+POST https://67ef2275797394145963.mockapi.io/books
+Content-Type: application/json
+
+{
+    "title": "Lập trình REST API với TypeSpec",
+    "author": "Sinh viên lớp b4"
+}

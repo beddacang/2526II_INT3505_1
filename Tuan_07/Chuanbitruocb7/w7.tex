@@ -1,0 +1,128 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{vietnam}
+\usepackage[T5]{fontenc} 
+\usepackage{amsfonts, amssymb, amsmath}
+\usepackage{lmodern}
+
+% --- Các gói bổ trợ ---
+\usepackage{amsmath, amsfonts, amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{geometry}
+\geometry{a4paper, margin=25mm}
+
+% --- Cấu hình hiển thị code (Listing) ---
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstset{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+% --- Thông tin tài liệu ---
+\title{\textbf{Tuần 7: Nguyên lý Triển khai Backend Service}}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Giới thiệu chung}
+Trong kiến trúc hướng dịch vụ (SOA), việc triển khai một Backend Service đòi hỏi tính chuẩn hóa cao để đảm bảo các dịch vụ có thể giao tiếp với nhau một cách nhất quán. Buổi học này tập trung vào quy trình tự động hóa từ khâu thiết kế đến thực thi.
+
+\section{Sử dụng OpenAPI và Swagger Codegen}
+
+\subsection{Tư duy Thiết kế Hợp đồng (Contract-First Design)}
+Trong SOA, "Hợp đồng" (Contract) là yếu tố sống còn. OpenAPI Spec (OAS) đóng vai trò là bản đặc tả kỹ thuật, mô tả chi tiết:
+\begin{itemize}
+    \item \textbf{Endpoints:} Các đường dẫn tài nguyên (API Routes).
+    \item \textbf{Methods:} Các phương thức HTTP (GET, POST, PUT, DELETE).
+    \item \textbf{Data Models:} Cấu trúc dữ liệu yêu cầu và phản hồi (Request/Response Schemas).
+\end{itemize}
+
+\subsection{Swagger Codegen}
+Swagger Codegen là công cụ tự động hóa việc chuyển đổi từ bản thiết kế (file YAML/JSON) sang mã nguồn thực tế. Việc này mang lại lợi ích:
+\begin{itemize}
+    \item \textbf{Đảm bảo tính đồng bộ:} Mã nguồn luôn khớp với tài liệu API.
+    \item \textbf{Tăng tốc độ phát triển:} Tự động sinh ra các lớp Router, Controller mẫu và DTO (Data Transfer Objects).
+    \item \textbf{Giảm thiểu lỗi con người:} Hạn chế sai sót trong việc định nghĩa kiểu dữ liệu và tham số.
+\end{itemize}
+
+\section{Kết nối Database với MongoDB và Mongoose}
+
+\subsection{MongoDB trong kiến trúc SOA}
+MongoDB là hệ quản trị cơ sở dữ liệu NoSQL dạng Document, rất phù hợp cho SOA vì khả năng mở rộng linh hoạt và cấu trúc dữ liệu tương đồng với JSON của API. Mỗi Service trong SOA thường quản lý một Database riêng để đảm bảo tính độc lập (Loose Coupling).
+
+\subsection{Vai trò của Mongoose (ODM)}
+Mongoose cung cấp một giải pháp dựa trên Schema để mô hình hóa dữ liệu ứng dụng:
+\begin{itemize}
+    \item \textbf{Validation:} Kiểm tra dữ liệu đầu vào trước khi lưu vào DB.
+    \item \textbf{Middleware:} Hỗ trợ các hàm tiền xử lý (như hash mật khẩu trước khi lưu).
+    \item \textbf{Query Builder:} Cung cấp các hàm truy vấn mạnh mẽ và dễ đọc.
+\end{itemize}
+
+\section{Quy trình triển khai chi tiết}
+
+\subsection{Bước 1: Định nghĩa OpenAPI Spec}
+Người phát triển viết file đặc tả \texttt{swagger.yaml}. Đây là bước quan trọng nhất để thống nhất giữa Frontend và Backend.
+
+\subsection{Bước 2: Sinh mã nguồn (Code Generation)}
+Sử dụng công cụ dòng lệnh để sinh mã nguồn Server Stub:
+\begin{lstlisting}[language=bash, caption=Lệnh sinh code từ Swagger CLI]
+java -jar swagger-codegen-cli.jar generate \
+   -i swagger.yaml \
+   -l nodejs-server \
+   -o ./backend-service
+\end{lstlisting}
+
+\subsection{Bước 3: Tích hợp Database Layer}
+Định nghĩa Model bằng Mongoose để kết nối với cơ sở dữ liệu:
+\begin{lstlisting}[language=javascript, caption=Ví dụ kết nối Mongoose]
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  email: { type: String, required: true }
+});
+
+const User = mongoose.model('User', userSchema);
+\end{lstlisting}
+
+\subsection{Bước 4: Viết Logic cho Controller}
+Tại các Controller đã được sinh ra, thay thế mã giả (mock data) bằng các truy vấn thực tế đến Database thông qua Mongoose Model.
+
+\section{Các nguyên lý quan trọng khi triển khai}
+\begin{enumerate}
+    \item \textbf{Statelessness (Không trạng thái):} Mỗi request phải độc lập và chứa đầy đủ thông tin xác thực.
+    \item \textbf{Error Handling:} Trả về lỗi theo chuẩn HTTP Status Code đã cam kết trong OpenAPI.
+    \item \textbf{Environment Variables:} Quản lý thông tin nhạy cảm (DB URI, Secret Key) qua file \texttt{.env}.
+\end{enumerate}
+
+\section{Kết luận}
+Việc kết hợp giữa OpenAPI và Mongoose giúp xây dựng một Backend Service chuẩn SOA: chuyên nghiệp, dễ bảo trì và có khả năng mở rộng cao. Đây là kỹ năng nền tảng cho bất kỳ kỹ sư phần mềm nào làm việc trong hệ thống phân tán.
+
+\end{document}
