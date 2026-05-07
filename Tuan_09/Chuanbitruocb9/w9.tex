@@ -1,0 +1,172 @@
+\documentclass[12pt, a4paper]{article}
+
+% --- Khai báo các gói cần thiết ---
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{amsmath}
+\usepackage{tabularx}
+\usepackage{booktabs}
+
+% --- Cấu hình hiển thị Code ---
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,                 
+    captionpos=b,                    
+    numbers=left,                    
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\title{\textbf{Phiên bản API và Quản lý vòng đời}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Tại sao phải quản lý phiên bản API?}
+Trong một hệ thống phân tán, API đóng vai trò là một "bản hợp đồng" (Contract) giữa Client và Server. Khi Server thay đổi cấu trúc dữ liệu mà không báo trước, bản hợp đồng bị vi phạm và Client sẽ bị lỗi (crash). 
+
+Quản lý phiên bản là quá trình duy trì nhiều "bản hợp đồng" cùng lúc để:
+\begin{itemize}
+    \item \textbf{Đảm bảo tính tương thích ngược (Backward Compatibility):} Các ứng dụng cũ vẫn hoạt động bình thường.
+    \item \textbf{Phát triển tính năng mới:} Cho phép thử nghiệm các kiến trúc mới mà không ảnh hưởng hệ thống hiện tại.
+    \item \textbf{Kiểm soát rủi ro:} Giúp quá trình di chuyển (migration) diễn ra từ từ.
+\end{itemize}
+
+---
+
+\section{Phân tích sâu các chiến lược Versioning}
+
+\subsection{1. Semantic Versioning (SemVer)}
+Hầu hết các API hiện đại tuân theo quy tắc $MAJOR.MINOR.PATCH$ (Ví dụ: $v2.3.1$):
+\begin{itemize}
+    \item \textbf{MAJOR (v2):} Thay đổi vi phạm (Breaking changes). Phải đổi URL hoặc Header.
+    \item \textbf{MINOR (v2.3):} Thêm tính năng mới nhưng không làm hỏng code cũ (Non-breaking).
+    \item \textbf{PATCH (v2.3.1):} Sửa lỗi (Bug fixes), không thay đổi cấu trúc dữ liệu.
+\end{itemize}
+
+\subsection{2. Các phương thức triển khai kỹ thuật}
+
+\begin{table}[h!]
+\small
+\centering
+\begin{tabularx}{\textwidth}{|l|X|X|}
+\hline
+\textbf{Phương pháp} & \textbf{Cách thực hiện} & \textbf{Đặc điểm chuyên sâu} \\ \hline
+\textbf{URI Path} & \texttt{/v1/users} & Dễ thực hiện nhất. Tuy nhiên, về mặt lý thuyết nó vi phạm nguyên tắc REST (mỗi tài nguyên chỉ nên có 1 URI duy nhất). \\ \hline
+\textbf{Query Param} & \texttt{/users?version=1} & Tiện lợi cho việc chuyển đổi nhanh (A/B Testing), nhưng gây khó khăn cho việc caching trên CDN. \\ \hline
+\textbf{Custom Header} & \texttt{X-API-Version: 1} & Giữ URI "sạch". Thường được dùng bởi các doanh nghiệp lớn (như Stripe) để quản lý phiên bản dựa trên ngày phát hành. \\ \hline
+\textbf{Accept Header} & \texttt{Accept: application/vnd.app.v1+json} & Đây là cách "đúng chuẩn" RESTful nhất. Client chỉ định phiên bản dữ liệu họ muốn nhận thông qua nội dung thương lượng (Content Negotiation). \\ \hline
+\end{tabularx}
+\end{table}
+
+---
+
+\section{Phân loại thay đổi trong API}
+
+\subsection{Thay đổi không vi phạm (Non-breaking Changes)}
+Bạn có thể cập nhật trực tiếp mà không cần tăng phiên bản lớn:
+\begin{itemize}
+    \item Thêm một endpoint mới.
+    \item Thêm một trường dữ liệu mới vào JSON trả về (Client nên được thiết kế để bỏ qua các trường lạ).
+    \item Thêm tham số truy vấn tùy chọn (Optional query parameters).
+\end{itemize}
+
+\subsection{Thay đổi vi phạm (Breaking Changes)}
+Bắt buộc phải tạo phiên bản mới (v2):
+\begin{itemize}
+    \item \textbf{Thay đổi kiểu dữ liệu:} Chuyển \texttt{"price": 100} (số) sang \texttt{"price": "100 VND"} (chuỗi).
+    \item \textbf{Thay đổi định dạng lỗi:} Thay đổi cấu trúc của đối tượng trả về khi có lỗi $400, 500$.
+    \item \textbf{Thay đổi ràng buộc:} Biến một tham số từ "tùy chọn" thành "bắt buộc".
+    \item \textbf{Tách/Gộp tài nguyên:} Ví dụ tách endpoint \texttt{/orders} thành \texttt{/orders/digital} và \texttt{/orders/physical}.
+\end{itemize}
+
+
+
+---
+
+\section{Vòng đời của một API (API Lifecycle)}
+
+Một phiên bản API thường trải qua các giai đoạn sau:
+
+\begin{enumerate}
+    \item \textbf{Alpha/Beta:} Phiên bản thử nghiệm, có thể thay đổi liên tục, không cam kết ổn định.
+    \begin{itemize}
+        \item \textit{Phản hồi:} Thu thập ý kiến từ một nhóm nhỏ người dùng.
+    \end{itemize}
+    \item \textbf{GA (General Availability):} Phiên bản ổn định, được hỗ trợ đầy đủ.
+    \item \textbf{Deprecated (Hạn chế sử dụng):} Vẫn hoạt động nhưng người dùng được khuyến cáo nên chuyển sang phiên bản mới.
+    \begin{itemize}
+        \item \textit{Kỹ thuật:} Trả về HTTP Header \texttt{Deprecation: true}.
+    \end{itemize}
+    \item \textbf{Sunset (Khai tử):} Giai đoạn cuối cùng trước khi đóng API vĩnh viễn. 
+    \begin{itemize}
+        \item \textit{Kỹ thuật:} Trả về Header \texttt{Sunset: <date>}.
+    \end{itemize}
+    \item \textbf{Retired (Đã tắt):} API không còn tồn tại, trả về lỗi $410$ Gone.
+\end{enumerate}
+
+---
+
+\section{Chiến lược di chuyển (Migration Strategy)}
+
+Để chuyển người dùng từ v1 sang v2 một cách an toàn, cần lập kế hoạch:
+
+\begin{description}
+    \item[Bước 1: Double Write/Read (Tùy chọn)] Server ghi dữ liệu vào cả 2 hệ thống (nếu có thay đổi DB) để đảm bảo dữ liệu v2 luôn sẵn sàng.
+    \item[Bước 2: Tài liệu hóa (Migration Guide)] Cung cấp bảng đối chiếu mã lỗi, cấu trúc JSON giữa 2 bản.
+    \item[Bước 3: Giai đoạn chuyển tiếp (Overlapping)] Duy trì v1 và v2 song song ít nhất 6-12 tháng.
+    \item[Bước 4: Theo dõi (Monitoring)] Sử dụng công cụ phân tích để xem còn bao nhiêu phần trăm (%) traffic vẫn gọi vào v1. Chỉ tắt v1 khi traffic gần bằng 0 hoặc đã quá hạn thông báo.
+\end{description}
+
+---
+
+\section{Mã nguồn minh họa quản lý phiên bản chuyên sâu}
+
+Dưới đây là ví dụ về việc sử dụng Middleware để xử lý logic \textbf{Deprecation}.
+
+\begin{lstlisting}[language=JavaScript]
+const express = require('express');
+const app = express();
+
+// Middleware thong bao API sap het han
+const deprecationWarning = (req, res, next) => {
+    res.setHeader('Deprecation', 'true');
+    res.setHeader('Sunset', 'Wed, 31 Dec 2026 23:59:59 GMT');
+    res.setHeader('Link', '<https://api.docs.com/v2>; rel="successor-version"');
+    next();
+};
+
+// V1 - Dang trong giai doan sap khai tu
+app.get('/api/v1/data', deprecationWarning, (req, res) => {
+    res.json({ message: "Day la phien ban cu" });
+});
+
+// V2 - Phien ban hien tai
+app.get('/api/v2/data', (req, res) => {
+    res.json({ message: "Day la phien ban moi" });
+});
+
+app.listen(3000, () => console.log('Server is running...'));
+\end{lstlisting}
+
+\end{document}
