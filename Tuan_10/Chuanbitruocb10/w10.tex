@@ -1,0 +1,105 @@
+\documentclass[12pt,a4paper]{article}
+
+% --- Cấu hình Tiếng Việt và Font ---
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% --- Gói bổ trợ giao diện ---
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{titlesec}
+
+% --- Tùy chỉnh tiêu đề ---
+\titleformat{\section}{\color{blue!70!black}\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\color{cyan!70!black}\normalfont\large\bfseries}{\thesubsection}{1em}{}
+
+% --- Thông tin tài liệu ---
+\title{\textbf{Vận hành Dịch vụ: Bảo mật \& Giám sát API}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Triển khai API lên môi trường sản xuất (Deploying API to Production)}
+Việc triển khai lên môi trường sản xuất (Production) không chỉ đơn giản là sao chép mã nguồn lên máy chủ. Nó đòi hỏi một quy trình tự động, an toàn và không gây gián đoạn dịch vụ.
+
+\begin{itemize}[label=\tiny$\blacksquare$]
+    \item \textbf{CI/CD (Continuous Integration / Continuous Deployment):} Đây là xương sống của việc triển khai. Mỗi khi bạn hoàn thành một tính năng mới, code sẽ tự động được kiểm tra (test), đóng gói (ví dụ: thành Docker image) và triển khai lên server. 
+    \begin{itemize}
+        \item \textit{Công cụ phổ biến:} GitHub Actions, GitLab CI, Jenkins.
+    \end{itemize}
+    
+    \item \textbf{Chiến lược triển khai không thời gian chết (Zero-downtime deployment):}
+    \begin{itemize}
+        \item \textbf{Blue/Green Deployment:} Chạy song song hai môi trường y hệt nhau. Môi trường Blue chạy phiên bản cũ, môi trường Green chạy phiên bản mới. Khi kiểm tra trên Green ổn định, chỉ cần chuyển hướng traffic từ Blue sang Green.
+        \item \textbf{Canary Release:} Đưa phiên bản mới cho một nhóm nhỏ người dùng (ví dụ 5-10\% traffic) dùng thử. Nếu không có lỗi, hệ thống sẽ mở rộng dần lên 100\%.
+    \end{itemize}
+\end{itemize}
+
+\section{Khả năng quan sát \& Giám sát (Observability \& Monitoring)}
+Khi API đã chạy trên Production, hệ thống cần phải tự "báo cáo" tình trạng hoạt động. Khả năng quan sát (Observability) dựa trên 3 trụ cột chính:
+
+\subsection{Nhật ký (Logs)}
+Logs là các bản ghi chép chi tiết về mọi sự kiện xảy ra trong ứng dụng.
+\begin{itemize}
+    \item \textbf{Bản chất:} Giống như hộp đen máy bay. Khi có lỗi (Error 500, Exception), bạn mở logs để xem chi tiết thông báo lỗi và vị trí dòng code bị lỗi.
+    \item \textbf{Công cụ:} ELK Stack (Elasticsearch, Logstash, Kibana), Splunk, Grafana Loki.
+\end{itemize}
+
+\subsection{Số liệu (Metrics)}
+Là các con số thống kê tổng quan về "sức khỏe" hệ thống tại một thời điểm.
+\begin{itemize}
+    \item \textbf{Tài nguyên:} \% CPU, RAM, dung lượng ổ cứng đang dùng.
+    \item \textbf{Hiệu suất API:} RPS (Số request/giây), Latency (Độ trễ), Error Rate (Tỷ lệ lỗi).
+    \item \textbf{Công cụ:} Prometheus (thu thập số liệu) và Grafana (vẽ biểu đồ). Hệ thống sẽ tự động gửi cảnh báo (Email, Slack) nếu CPU > 90\%.
+\end{itemize}
+
+\subsection{Theo dõi phân tán (Tracing)}
+Áp dụng cho hệ thống Microservices nơi một request đi qua nhiều dịch vụ khác nhau.
+\begin{itemize}
+    \item \textbf{Bản chất:} Gắn một ID duy nhất (\texttt{TraceID}) cho mỗi request để theo dõi thời gian xử lý tại từng Service và Database.
+    \item \textbf{Công cụ:} Jaeger, Zipkin, OpenTelemetry.
+\end{itemize}
+
+\section{Đảm bảo tính sẵn sàng (Availability \& Resilience)}
+Giúp API có cơ chế "tự vệ" khi bị quá tải hoặc dịch vụ phụ thuộc bị sập.
+
+\subsection{Giới hạn tốc độ (Rate Limiting)}
+\begin{itemize}
+    \item \textbf{Mục đích:} Ngăn chặn bot hoặc tấn công DDoS làm sập server.
+    \item \textbf{Cách hoạt động:} Giới hạn số lượng request (ví dụ: 100 req/phút mỗi IP). Nếu vượt quá, trả về lỗi \textbf{429 Too Many Requests}.
+    \item \textbf{Thuật toán:} Token Bucket, Leaky Bucket.
+\end{itemize}
+
+\subsection{Bộ ngắt mạch (Circuit Breaker)}
+\begin{itemize}
+    \item \textbf{Mục đích:} Ngăn chặn lỗi dây chuyền (cascading failure).
+    \item \textbf{Trạng thái Đóng (Closed):} Request đi qua bình thường.
+    \item \textbf{Trạng thái Mở (Open):} Nếu tỷ lệ lỗi cao, ngắt kết nối ngay lập tức để bảo vệ hệ thống, không chờ timeout.
+    \item \textbf{Trạng thái Mở một nửa (Half-Open):} Thử nghiệm gửi lại một vài request để kiểm tra sự phục hồi của hệ thống.
+\end{itemize}
+
+\section{Bảo mật trong quá trình sản xuất (Security in Production)}
+
+\subsection{Tường lửa ứng dụng web (WAF)}
+Khác với tường lửa thông thường, WAF hiểu giao thức HTTP/HTTPS để chặn các cuộc tấn công \textbf{OWASP Top 10} như:
+\begin{itemize}
+    \item \textbf{SQL Injection:} Chèn lệnh SQL lạ vào input.
+    \item \textbf{Cross-Site Scripting (XSS):} Chèn mã độc JavaScript.
+    \item \textit{Công cụ:} AWS WAF, Cloudflare WAF, ModSecurity.
+\end{itemize}
+
+\subsection{Nhật ký kiểm tra (Audit Logs)}
+\begin{itemize}
+    \item \textbf{Phân biệt:} Khác với Application Logs, Audit Logs trả lời câu hỏi: "\textit{Ai đã làm gì, vào lúc nào, ở đâu?}"
+    \item \textbf{Ví dụ:} Truy vết việc Quản trị viên thay đổi quyền người dùng. Các log này thường được mã hóa và lưu trữ độc lập để phục vụ điều tra bảo mật.
+\end{itemize}
+
+\end{document}
