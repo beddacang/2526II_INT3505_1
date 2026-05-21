@@ -1,0 +1,187 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{vntex} % Hỗ trợ tiếng Việt trọn vẹn cho pdflatex
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+% Cấu hình hiển thị code (listings)
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\title{\textbf{Kiến Trúc và Các Mẫu Thiết Kế API Thực Chiến}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Giới Thiệu Tổng Quan}
+Thiết kế API không chỉ đơn thuần là tạo ra các đường dẫn (endpoints) cho có, mà nó là nghệ thuật kiến trúc giúp các hệ thống "nói chuyện" với nhau một cách mượt mà, hiệu quả và có khả năng mở rộng. Tài liệu này chuẩn hóa kiến thức từ lý thuyết đến thực tế giúp lập trình viên làm chủ các mẫu thiết kế API, biết cách chọn đúng công cụ (REST, gRPC, GraphQL) và cách kết hợp chúng trong một dự án thực tế.
+
+\section{Các Mẫu Thiết Kế API (Design Patterns)}
+
+\subsection{CRUD Pattern (Mẫu hướng tài nguyên)}
+Đây là mẫu thiết kế kinh điển và phổ biến nhất. Hệ thống coi mọi thứ là \textbf{Tài nguyên (Resource)} và xoay quanh 4 thao tác cơ bản: Create (Tạo), Read (Đọc), Update (Cập nhật), Delete (Xóa).
+\begin{itemize}
+    \item \textbf{Cách hoạt động:} Ánh xạ trực tiếp vào các HTTP Methods của REST:
+    \begin{itemize}
+        \item \texttt{POST /users} $\rightarrow$ Tạo tài nguyên người dùng mới.
+        \item \texttt{GET /users/123} $\rightarrow$ Lấy thông tin chi tiết người dùng có ID 123.
+        \item \texttt{PUT /users/123} $\rightarrow$ Thay thế toàn bộ thông tin hoặc \texttt{PATCH /users/123} (Cập nhật một phần).
+        \item \texttt{DELETE /users/123} $\rightarrow$ Xóa tài nguyên người dùng.
+    \end{itemize}
+    \item \textbf{Điểm mạnh:} Dễ hiểu, chuẩn hóa cao, dễ xây dựng và tích hợp với các hệ thống ORM/Database.
+    \item \textbf{Điểm yếu:} Khó xử lý các thao tác mang tính "hành động" hoặc quy trình nghiệp vụ phức tạp (ví dụ: thao tác huỷ kích hoạt tài khoản thì nên dùng \texttt{PATCH} hay \texttt{POST}?).
+\end{itemize}
+
+\subsection{Query Pattern (Mẫu truy vấn nâng cao)}
+Khi tập dữ liệu lớn lên, việc chỉ sử dụng các phương thức \texttt{GET} tài nguyên cơ bản là không đủ đáp ứng hiệu năng. Query Pattern giải quyết các bài toán về: Lọc (Filtering), Sắp xếp (Sorting), Phân trang (Pagination) và Tìm kiếm (Search).
+\begin{itemize}
+    \item \textbf{Cách hoạt động:} Sử dụng linh hoạt các Query Parameters trên URL:
+    \begin{itemize}
+        \item \textit{Phân trang:} \texttt{GET /products?page=2\&limit=20}
+        \item \textit{Bộ lọc \& Sắp xếp:} \texttt{GET /products?category=electronics\&sort=-price} (Dấu \texttt{-} đại diện cho việc sắp xếp giảm dần).
+    \end{itemize}
+    \item \textbf{Mở rộng (CQRS - Command Query Responsibility Segregation):} Tách biệt hoàn toàn đường đọc dữ liệu (Query) và đường ghi dữ liệu (Command) thành các dịch vụ độc lập để tối ưu hóa hiệu năng cơ sở dữ liệu.
+\end{itemize}
+
+\subsection{HATEOAS Pattern (Hypermedia As The Engine Of Application State)}
+Đây là đỉnh cao của sự trưởng thành trong kiến trúc REST API (Level 3 của Richardson Maturity Model). Ý tưởng cốt lõi là: Khi trả về một tài nguyên, API sẽ đính kèm luôn \textbf{danh sách các hành động tiếp theo} mà client có thể thực hiện dưới dạng các liên kết (links).
+
+Ví dụ phản hồi JSON của một đơn hàng đang chờ thanh toán:
+\begin{lstlisting}
+{
+  "order_id": 9876,
+  "status": "pending_payment",
+  "amount": 150.00,
+  "_links": {
+    "self": { "href": "/orders/9876" },
+    "pay": { "href": "/orders/9876/payments", "method": "POST" },
+    "cancel": { "href": "/orders/9876/cancel", "method": "POST" }
+  }
+}
+\end{lstlisting}
+\begin{itemize}
+    \item \textbf{Điểm mạnh:} Client không cần phải tự suy đoán hoặc hardcode URL cho bước tiếp theo. Nếu trạng thái đơn hàng đổi thành "đã giao", liên kết \texttt{pay} sẽ tự động biến mất và thay thế bằng liên kết \texttt{return\_product}.
+\end{itemize}
+
+\subsection{Event-driven Pattern (Mẫu kiến trúc hướng sự kiện)}
+Thay vì Client chủ động gọi Server và đứng đợi phản hồi một cách đồng bộ (Synchronous), các dịch vụ trong hệ thống sẽ giao tiếp với nhau qua các \textbf{Sự kiện (Events)} bất đồng bộ (Asynchronous) thông qua một Message Broker trung gian (như Apache Kafka, RabbitMQ).
+\begin{itemize}
+    \item \textbf{Cách hoạt động:} Khi Service A hoàn thành tác vụ nghiệp vụ, nó bắn ra một Event (Ví dụ: \texttt{OrderCreated}). Các Service B, C, D đăng ký lắng nghe Event này sẽ tự động nhặt thông điệp về xử lý độc lập mà Service A không cần quan tâm.
+    \item \textbf{Điểm mạnh:} Giải bớt sự phụ thuộc (Decoupling) giữa các microservices, giúp hệ thống chịu tải cực tốt và dễ mở rộng.
+\end{itemize}
+
+\subsection{Webhook Pattern (API đảo ngược)}
+Nếu Event-driven dùng để giao tiếp nội bộ giữa các microservices, thì \textbf{Webhook} là cách chúng ta mang kiến trúc hướng sự kiện ra bên ngoài mạng Internet để tích hợp với bên thứ ba. Thay vì ứng dụng khách phải liên tục gọi API để hỏi Server "Có dữ liệu mới chưa?" (Polling), Server sẽ chủ động "gõ cửa" ứng dụng khách khi có sự kiện phát sinh.
+
+\section{Phân Vai Công Nghệ: Ai dùng REST, gRPC hay GraphQL?}
+Mỗi công nghệ đóng một vai trò chiến lược riêng trong kiến trúc tổng thể, không có công nghệ tốt nhất, chỉ có lựa chọn phù hợp nhất cho bài toán.
+
+\begin{table}[h!]
+\centering
+\caption{Bảng so sánh chi tiết giữa REST, gRPC và GraphQL}
+\label{tab:api_comparison}
+\begin{tabular}{p{3cm} p{4cm} p{4cm} p{4cm}}
+\toprule
+\textbf{Tiêu chí} & \textbf{REST (HTTP/1.1)} & \textbf{gRPC (HTTP/2)} & \textbf{GraphQL (HTTP/1.1)} \\ \midrule
+\textbf{Bản chất} & Hướng tài nguyên (CRUD) & Gọi hàm từ xa (RPC) & Hướng truy vấn (Query) \\
+\textbf{Định dạng dữ liệu} & JSON, XML (Dạng văn bản) & Protocol Buffers (Dạng nhị phân) & JSON (Dạng văn bản) \\
+\textbf{Hiệu năng} & Trung bình / Khá & \textbf{Cực kỳ cao} (Nhẹ, tối ưu hóa kết nối) & Trung bình (Phụ thuộc vào độ phức tạp truy vấn) \\
+\textbf{Kịch bản áp dụng} & \textbf{Public API}, ứng dụng Web truyền thống, tích hợp hệ thống ngoài. & \textbf{Internal Microservices} đòi hỏi tốc độ cao và độ trễ thấp. & \textbf{Frontend-driven apps}, Mobile, Hệ thống Dashboard phức tạp. \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+    \item \textbf{Dùng REST khi:} Bạn muốn xây dựng API cho cộng đồng sử dụng chung (như Stripe, GitHub API). Đây là tiêu chuẩn toàn cầu mà mọi lập trình viên đều quen thuộc.
+    \item \textbf{Dùng gRPC khi:} Bạn có hệ thống gồm hàng trăm Microservices cần nói chuyện nội bộ với nhau liên tục. Định dạng nhị phân giúp tiết kiệm băng thông và tăng tốc độ xử lý vượt trội.
+    \item \textbf{Dùng GraphQL khi:} Bạn phát triển Mobile app hoặc Dashboard phức tạp. Thay vì phải gọi đồng thời nhiều REST API (\texttt{/user}, \texttt{/posts}, \texttt{/comments}) để hiển thị một màn hình, GraphQL giúp lấy toàn bộ dữ liệu chỉ trong \textbf{1 lượt gọi duy nhất (Single Round Trip)} đúng với các trường yêu cầu, tránh tình trạng thừa dữ liệu (Over-fetching).
+\end{itemize}
+
+\section{Kỹ Năng Thực Chiến: Kết Hợp Nhiều Mẫu Thiết Kế (Hybrid API)}
+Trong một hệ thống Enterprise quy mô lớn, không bao giờ có một công nghệ độc tôn. Các mẫu thiết kế được phối hợp linh hoạt thành một chuỗi quy trình khép kín để giải quyết bài toán thương mại điện tử (E-commerce):
+
+\begin{enumerate}
+    \item \textbf{Client (Web/Mobile) $\rightarrow$ API Gateway (GraphQL):} Người dùng truy cập trang chi tiết sản phẩm. Frontend dùng \textbf{GraphQL} để lấy thông tin sản phẩm, danh sách đánh giá, và số lượng kho cùng lúc trong một request.
+    \item \textbf{Client $\rightarrow$ Order Service (REST/CRUD):} Người dùng bấm nút "Mua ngay". Frontend thực hiện gửi một yêu cầu \texttt{POST /orders} theo chuẩn \textbf{REST/CRUD}.
+    \item \textbf{Order Service $\rightarrow$ Payment Service (gRPC):} Để khởi tạo giao dịch thanh toán một cách an toàn và nhanh chóng, Order Service gọi trực tiếp qua giao thức \textbf{gRPC} sang Payment Service.
+    \item \textbf{Payment Service $\rightarrow$ Cổng thanh toán bên thứ ba:} Hệ thống chuyển hướng người dùng sang các đối tác thanh toán (như Stripe, Paypal).
+    \item \textbf{Cổng thanh toán $\rightarrow$ Hệ thống (Webhook):} Sau khi người dùng thanh toán thành công, cổng thanh toán gọi vào đường dẫn \textbf{Webhook} mà hệ thống đã đăng ký trước đó (\texttt{POST /api/webhooks/payment-callback}) để xác nhận dòng tiền.
+    \item \textbf{Payment Service $\rightarrow$ Toàn hệ thống (Event-driven):} Ngay khi xác thực Webhook thành công, Payment Service phát ra một sự kiện \texttt{PaymentSuccess} vào Kafka. \textit{Inventory Service} nghe thấy sẽ tự động trừ kho, \textit{Notification Service} nhận tin và gửi Email hóa đơn cho khách hàng.
+\end{enumerate}
+
+\section{Triển Khai Webhook Chuẩn Production}
+Dưới đây là mã nguồn minh họa bằng Node.js / Express phía ứng dụng nhận Webhook (Consumer) tích hợp cơ chế kiểm tra chữ ký số bảo mật:
+
+\begin{lstlisting}[language=bash]
+const express = require('express');
+const crypto = require('crypto');
+const app = express();
+
+% Khoa bi mat dung de xac thuc du lieu (Shared Secret)
+const WEBHOOK_SECRET = "super_secret_key_123";
+
+app.post('/webhooks/payment-received', express.raw({type: 'application/json'}), (req, res) => {
+    const signature = req.headers['x-hub-signature-256']; % Chu ky tu ben gui
+    const payload = req.body;
+
+    % 1. Qua trinh xac thuc bao mat (Security Verification)
+    const expectedSignature = crypto
+        .createHmac('sha256', WEBHOOK_SECRET)
+        .update(payload)
+        .digest('hex');
+
+    if (signature !== `sha256=${expectedSignature}`) {
+        return res.status(401).send('Chu ky khong hop le!');
+    }
+
+    % 2. Xu ly du lieu (Bat dong bo)
+    const data = JSON.parse(payload);
+    console.log(`Nhan thong bao thanh toan cho don hang: ${data.order_id}`);
+    
+    % Day vao message queue de xu ly nguyen vu sau...
+
+    % 3. Phan hoi lap tuc cho ben gui (Tranh timeout)
+    res.status(200).send('Da nhan thanh cong');
+});
+\end{lstlisting}
+
+\subsection{Các nguyên tắc cốt lõi khi vận hành Webhook}
+\begin{itemize}
+    \item \textbf{Phản hồi siêu tốc (Timeout):} Ngay khi nhận được Webhook, hãy ghi nhận dữ liệu vào Message Queue rồi trả về trạng thái HTTP \texttt{200 OK} ngay lập tức (dưới 2 giây). Không đứng đợi xử lý xong các logic nghiệp vụ nặng rồi mới phản hồi, vì bên gửi sẽ quét lỗi và coi hệ thống của bạn bị treo.
+    \item \textbf{Cơ chế Thử lại (Retry với Exponential Backoff):} Nếu bạn đóng vai trò là nhà cung cấp Webhook (Provider), khi hệ thống đối tác gặp lỗi (5xx, 4xx) hoặc hết thời gian chờ, bạn cần cấu hình gửi lại thông báo sau các khoảng thời gian tăng dần (ví dụ: sau 1 phút, 5 phút, 15 phút, 1 giờ...) trước khi từ bỏ.
+    \item \textbf{Xử lý trùng lặp (Idempotency):} Do đặc thù mạng Internet và cơ chế tự động gửi lại, một Webhook có thể bị gửi trùng lặp. Phía nhận bắt buộc phải triển khai cơ chế kiểm tra tính duy nhất của ID giao dịch để đảm bảo không cộng tiền hoặc cập nhật trạng thái hai lần cho một đơn hàng.
+\end{itemize}
+
+\end{document}
